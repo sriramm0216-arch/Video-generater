@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Video Clip Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: #38bdf8;
+            margin-bottom: 8px;
+        }
+
+        p {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #fff;
+            padding: 12px;
+            border-radius: 10px;
+            outline: none;
+            resize: none;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+        }
+
+        textarea:focus {
+            border-color: #38bdf8;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #38bdf8;
+            color: #0f172a;
+            border: none;
+            font-weight: bold;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #0ea5e9;
+        }
+
+        button:disabled {
+            background: #64748b;
+            cursor: not-allowed;
+        }
+
+        .output-box {
+            margin-top: 20px;
+            display: none;
+        }
+
+        video {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid #334155;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #fbbf24;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🎬 AI Video Generator</h1>
+        <p>Type a prompt to generate a unique short video clip!</p>
+
+        <textarea id="promptInput" placeholder="e.g. A cute kitten playing with a ball of yarn, highly detailed..."></textarea>
+        
+        <button id="generateBtn" onclick="generateVideo()">Generate Clip</button>
+
+        <div class="status" id="statusText">Generating video... This may take 30-60 seconds.</div>
+
+        <div class="output-box" id="outputBox">
+            <video id="videoPlayer" controls autoplay loop></video>
+            <a id="downloadBtn" download="ai-clip.mp4">
+                <button style="background: #22c55e; color: white;">Download Clip</button>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration updated with your token
+        const API_KEY = "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";
+        const MODEL_URL = "https://api-inference.huggingface.co/models/damo-vilab/text-to-video-ms-1.7b";
+
+        async function generateVideo() {
+            const prompt = document.getElementById('promptInput').value.trim();
+            const btn = document.getElementById('generateBtn');
+            const status = document.getElementById('statusText');
+            const outputBox = document.getElementById('outputBox');
+            const videoPlayer = document.getElementById('videoPlayer');
+            const downloadBtn = document.getElementById('downloadBtn');
+
+            if (!prompt) {
+                alert("Please enter a text prompt!");
+                return;
+            }
+
+            // UI Loading state
+            btn.disabled = true;
+            status.style.display = "block";
+            outputBox.style.display = "none";
+            status.innerText = "Connecting to AI Model... (Please wait)";
+
+            try {
+                const response = await fetch(MODEL_URL, {
+                    headers: {
+                        Authorization: `Bearer ${API_KEY}`,
+                        "Content-Type": "application/json"
+                    },
+                    method: "POST",
+                    body: JSON.stringify({ inputs: prompt })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Model is loading or API limit reached. Try again in a minute.");
+                }
+
+                // Convert response to Blob (Video stream)
+                const videoBlob = await response.blob();
+                const videoUrl = URL.createObjectURL(videoBlob);
+
+                // Load in UI
+                videoPlayer.src = videoUrl;
+                downloadBtn.href = videoUrl;
+                outputBox.style.display = "block";
+                status.style.display = "none";
+
+            } catch (error) {
+                alert("Error: " + error.message);
+                status.style.display = "none";
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
